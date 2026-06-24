@@ -1,7 +1,12 @@
+
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://127.0.0.1:8000";
 
 export default function Navbar() {
 
@@ -77,8 +82,9 @@ export default function Navbar() {
         </Link>
 
         <a
-          href="http://127.0.0.1:8000/docs"
+          href={`${API_BASE}/docs`}
           target="_blank"
+          rel="noreferrer"
         >
           API Docs
         </a>
