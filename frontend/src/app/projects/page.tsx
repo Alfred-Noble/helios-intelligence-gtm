@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import ProtectedRoute from "../components/ProtectedRoute";
 
 
@@ -12,6 +13,7 @@ type Project = {
   id: number;
   name: string;
   industry: string;
+  goal: string;
 };
 
 type RankedLead = {
@@ -58,12 +60,14 @@ export default function ProjectsPage() {
   const [rankResults, setRankResults] = useState("");
   const [rankedLeads, setRankedLeads] = useState<RankedLead[]>([]);
   const [dashboard, setDashboard] = useState<ProjectDashboard | null>(null);
+  const [goal, setGoal] = useState("");
 
 
   const [form, setForm] = useState({
     name: "",
     industry: "",
-    description: ""
+    description: "",
+    goal:""
   });
 
   async function loadProjects() {
@@ -101,7 +105,8 @@ export default function ProjectsPage() {
     setForm({
       name: "",
       industry: "",
-      description: ""
+      description: "",
+      goal: ""
     });
 
     await loadProjects();
@@ -187,6 +192,18 @@ export default function ProjectsPage() {
               setForm({
                 ...form,
                 description: e.target.value
+              })
+            }
+          />
+          <br /><br />
+
+          <textarea
+            placeholder="Project Goal"
+            value={form.goal}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                goal: e.target.value
               })
             }
           />
