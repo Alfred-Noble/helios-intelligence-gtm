@@ -1,0 +1,38 @@
+# Dependencies
+
+node_modules/
+
+# Environment Variables
+
+.env
+.env.local
+.env.production
+
+# Python
+
+venv/
+**pycache**/
+*.pyc
+
+# Next.js
+
+.next/
+out/
+
+# Logs
+
+*.log
+
+# IDE
+
+.vscode/
+
+# OS
+
+.DS_Store
+Thumbs.db
+
+# Build
+
+dist/
+build/

@@ -1,0 +1,307 @@
+from sqlalchemy.orm import Session
+
+from app.schemas.project import ProjectCreate
+from app.repositories.project_repository import ProjectRepository
+from app.repositories.lead_repository import LeadRepository
+from app.services.gemini_service import GeminiService
+
+
+class ProjectService:
+
+    @staticmethod
+    def create_project(
+        db: Session,
+        project_data: ProjectCreate
+    ):
+        return ProjectRepository.create(
+            db,
+            project_data
+        )
+
+    @staticmethod
+    def get_projects(
+        db: Session
+    ):
+        return ProjectRepository.get_all(
+            db
+        )
+    
+    @staticmethod
+    def rank_leads_for_project(
+        db: Session,
+        project_id: int
+    ):
+        project = ProjectRepository.get_by_id(
+            db=db,
+            project_id=project_id
+        )
+
+        if not project:
+            return {
+                "error": "Project not found"
+            }
+
+        leads = LeadRepository.get_all_leads(
+            db=db
+        )
+
+        leads = leads[:5]
+
+        ranked_leads = []
+
+        for lead in leads:
+
+            score = 0
+            reasons = []
+
+            # Industry Match
+            if (
+                project.industry
+                and lead.industry
+                and project.industry.lower()
+                in lead.industry.lower()
+            ):
+                score += 50
+                reasons.append("Industry Match")
+
+            # AI Expertise
+            if (
+                lead.headline
+                and "AI" in lead.headline
+            ):
+                score += 20
+                reasons.append("AI Expertise")
+
+            # Research Background
+            if (
+                lead.headline
+                and "Research" in lead.headline
+            ):
+                score += 15
+                reasons.append("Research Background")
+
+            # Founder Experience
+            if (
+                lead.headline
+                and "Founder" in lead.headline
+            ):
+                score += 15
+                reasons.append("Founder Experience")
+
+            # CTO Experience
+            if (
+                lead.headline
+                and "CTO" in lead.headline
+            ):
+                score += 10
+                reasons.append("Technical Leadership")
+
+            # Existing AI Score Bonus
+            if lead.ai_score:
+                score += int(lead.ai_score / 5)
+                reasons.append("High Lead Quality")
+
+            # Cap score at 100
+            score = min(score, 100)
+
+            # Recommendation Category
+            if score >= 80:
+                recommendation = "Strong Match"
+            elif score >= 50:
+                recommendation = "Potential Match"
+            else:
+                recommendation = "Low Priority"
+
+            persona = "General Contact"
+
+            headline = lead.headline or ""
+
+            if any(
+                keyword in headline
+                for keyword in [
+                    "CTO",
+                    "Engineer",
+                    "Architect",
+                    "Scientist",
+                    "Research"
+                ]
+            ):
+                persona = "Technical Buyer"
+
+            elif any(
+                keyword in headline
+                for keyword in [
+                    "CEO",
+                    "Founder",
+                    "Co-Founder",
+                    "Director"
+                ]
+            ):
+                persona = "Economic Buyer"
+
+            elif any(
+                keyword in headline
+                for keyword in [
+                    "Manager",
+                    "Sales",
+                    "GTM",
+                    "VP"
+                ]
+            ):
+                persona = "Business Champion"
+
+            llm_analysis = None
+
+            try:
+
+                llm_analysis = GeminiService.analyze_match(
+                    project=project,
+                    lead=lead
+                )
+
+            except Exception:
+
+                llm_analysis = """
+                {
+                "score": 0,
+                "reason": "AI analysis temporarily unavailable.",
+                "outreach": "Please retry later."
+                }
+                """
+
+            ranked_leads.append({
+                "lead_id": lead.id,
+                "persona": persona,
+                "full_name": lead.full_name,
+                "company": lead.company,
+                "match_score": score,
+                "recommendation": recommendation,
+                "reasons": reasons,
+                "llm_analysis": llm_analysis
+            })
+
+        ranked_leads.sort(
+            key=lambda x: x["match_score"],
+            reverse=True
+        )
+        top_candidates = ranked_leads[:5]
+
+        return {
+            "project": project.name,
+            "project_industry": project.industry,
+            "ranked_leads": ranked_leads[:10]
+        }
+    
+    @staticmethod
+    def get_project_dashboard(
+        db: Session,
+        project_id: int
+    ):
+        ranking_data = ProjectService.rank_leads_for_project(
+            db=db,
+            project_id=project_id
+        )
+
+        if "error" in ranking_data:
+            return ranking_data
+
+        ranked_leads = ranking_data["ranked_leads"]
+
+        total_leads = len(ranked_leads)
+
+        strong_matches = len([
+            lead for lead in ranked_leads
+            if lead["recommendation"] == "Strong Match"
+        ])
+
+        potential_matches = len([
+            lead for lead in ranked_leads
+            if lead["recommendation"] == "Potential Match"
+        ])
+
+        low_priority = len([
+            lead for lead in ranked_leads
+            if lead["recommendation"] == "Low Priority"
+        ])
+
+        avg_score = (
+            sum(
+                lead["match_score"]
+                for lead in ranked_leads
+            ) / total_leads
+        ) if total_leads > 0 else 0
+
+        top_match = (
+            ranked_leads[0]["full_name"]
+            if ranked_leads
+            else None
+        )
+        all_leads = LeadRepository.get_all_leads(db)
+
+        avg_ai_score = (
+            sum(
+                lead.ai_score or 0
+                for lead in all_leads
+            ) / len(all_leads)
+        ) if all_leads else 0
+
+        return {
+            "project": ranking_data["project"],
+            "industry": ranking_data["project_industry"],
+            "total_leads_evaluated": total_leads,
+            "strong_matches": strong_matches,
+            "potential_matches": potential_matches,
+            "low_priority": low_priority,
+            "average_match_score": round(avg_score, 2),
+            "average_ai_score": round(avg_ai_score, 2),
+            "top_match": top_match
+        }
+    
+    @staticmethod
+    def generate_project_outreach(
+        db: Session,
+        project_id: int,
+        lead_id: int
+    ):
+        project = ProjectRepository.get_by_id(
+            db=db,
+            project_id=project_id
+        )
+
+        if not project:
+            return {
+                "error": "Project not found"
+            }
+
+        lead = LeadRepository.get_by_id(
+            db=db,
+            lead_id=lead_id
+        )
+
+        if not lead:
+            return {
+                "error": "Lead not found"
+            }
+
+        message = f"""
+    Hi {lead.full_name},
+
+    I am currently working on the project "{project.name}".
+
+    Our goal is:
+    {project.goal}
+
+    Your experience as {lead.headline} at {lead.company} and your background in {lead.industry} strongly align with our objectives.
+
+    I would love to connect and learn more about your work and explore potential collaboration opportunities.
+
+    Best regards,
+    Alfred Noble
+    """.strip()
+
+        return {
+            "project": project.name,
+            "lead": lead.full_name,
+            "message": message
+        }
+    
