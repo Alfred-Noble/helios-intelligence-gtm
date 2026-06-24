@@ -41,7 +41,7 @@ export default function LoginPage() {
       );
 
       alert("Login Successful");
-      router.push("/");
+      window.location.href = "/";
     }
     else {
 

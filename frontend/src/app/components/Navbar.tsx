@@ -11,14 +11,28 @@ const API_BASE =
 export default function Navbar() {
 
   const [loggedIn, setLoggedIn] =
-    useState<boolean>(false);
+    useState(false);
 
   useEffect(() => {
+    const checkAuth = () => {
+      const token =
+        localStorage.getItem("token");
 
-    setLoggedIn(
-      localStorage.getItem("token") !== null
+      setLoggedIn(!!token);
+    };
+
+    checkAuth();
+
+    window.addEventListener(
+      "storage",
+      checkAuth
     );
 
+    return () =>
+      window.removeEventListener(
+        "storage",
+        checkAuth
+      );
   }, []);
 
   function logout() {
