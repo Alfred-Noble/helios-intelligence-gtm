@@ -16,11 +16,20 @@ type Analytics = {
 };
 
 export default async function Home() {
-  const analytics = await getAnalytics();
+  const analytics =
+  await getAnalytics() || {};
 
-  const leads = await getLeads();
+  const leads =
+    await getLeads() || {
+      items: []
+    };
 
-  const projects = await getProjects();
+  const projects =
+    await getProjects() || [];
+
+  // console.log("Analytics", analytics);
+  // console.log("Leads", leads);
+  // console.log("Projects", projects);
 
 
   return (

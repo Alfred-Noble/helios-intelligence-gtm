@@ -6,7 +6,7 @@ import Link from "next/link";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://127.0.0.1:8000";
+  "https://helios-backend-5jy0.onrender.com";
 
 type MatchedLead = {
   name: string;
@@ -52,12 +52,19 @@ export default function SignalsPage() {
 
     try {
 
+        console.log(
+        `${API_BASE}/signals/?industry=${industry}&region=${region}`
+        );
+
         const response = await fetch(
         `${API_BASE}/signals/?industry=${industry}&region=${region}`
         );
 
-        const data =
-        await response.json();
+        console.log("Status:", response.status);
+
+        const data = await response.json();
+
+        console.log("Signals Response:", data);
 
         setResult(data);
 

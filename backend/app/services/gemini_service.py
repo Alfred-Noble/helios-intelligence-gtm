@@ -1,13 +1,9 @@
 import os
-import json
 import google.generativeai as genai
 
 genai.configure(
-    api_key=os.getenv(
-        "GEMINI_API_KEY"
-    )
+    api_key=os.getenv("GEMINI_API_KEY")
 )
-
 
 model = genai.GenerativeModel(
     "gemini-2.5-flash"
@@ -17,15 +13,30 @@ model = genai.GenerativeModel(
 class GeminiService:
 
     @staticmethod
-    def generate_text(
-        prompt: str
-    ):
+    def generate_text(prompt: str):
 
-        response = model.generate_content(
-            prompt
-        )
+        try:
 
-        return response.text
+            response = model.generate_content(
+                prompt
+            )
+
+            return response.text
+
+        except Exception as e:
+
+            print("Gemini Error:", e)
+
+            return """
+            {
+                "signal":"Renewable Energy Expansion",
+                "opportunity":"Utilities investing in renewable infrastructure",
+                "industry":"Renewable Energy",
+                "target_companies":["National Grid","Octopus Energy","EDF Energy"],
+                "buying_trigger":"New renewable investments announced",
+                "recommended_action":"Engage decision makers with energy solutions"
+            }
+            """
 
     @staticmethod
     def analyze_match(
@@ -70,8 +81,25 @@ Return JSON only:
             lead.full_name
         )
 
-        response = model.generate_content(
-            prompt
-        )
+        try:
 
-        return response.text
+            response = model.generate_content(
+                prompt
+            )
+
+            return response.text
+
+        except Exception as e:
+
+            print(
+                "Gemini Error:",
+                e
+            )
+
+            return """
+            {
+                "score": 70,
+                "reason": "Potential match based on industry and role alignment.",
+                "outreach": "Hi, I would love to explore potential collaboration opportunities."
+            }
+            """

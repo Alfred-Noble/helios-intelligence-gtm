@@ -5,7 +5,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://127.0.0.1:8000";
+  "https://helios-backend-5jy0.onrender.com";
 
 export default function LeadsPage() {
 

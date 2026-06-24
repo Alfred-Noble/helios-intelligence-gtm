@@ -7,7 +7,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://127.0.0.1:8000";
+"https://helios-backend-5jy0.onrender.com";
 
 type Project = {
   id: number;
@@ -253,6 +253,10 @@ export default function ProjectsPage() {
               {project.industry}
 
               <br />
+              <p>
+                <strong>Goal:</strong>
+                {project.goal}
+              </p>
               <br />
 
               <button className="btn-primary"
@@ -267,20 +271,6 @@ export default function ProjectsPage() {
                 }}
               >
                 Rank Leads
-              </button>
-
-              <button
-                className="btn-primary"
-                onClick={() =>
-                  loadDashboard(
-                    project.id
-                  )
-                }
-                style={{
-                  marginLeft: "10px"
-                }}
-              >
-                Dashboard
               </button>
 
             </div>
@@ -331,12 +321,6 @@ export default function ProjectsPage() {
                       <strong>Persona:</strong>
                       {" "}
                       {lead.persona}
-                    </p>
-
-                    <p>
-                      <strong>Match Score:</strong>
-                      {" "}
-                      {lead.match_score}
                     </p>
 
                     <p>
